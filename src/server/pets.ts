@@ -1,5 +1,5 @@
 import type { Pet as PetRecord, Prisma } from '@prisma/client'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 
 export const ACTIVE_PETS_WHERE: Prisma.PetWhereInput = {
   OR: [{ deleted_at: null }, { deleted_at: { isSet: false } }],

@@ -468,7 +468,7 @@ This reproduces the Express stack: `express.json()` only parses `application/jso
 
 ```ts
 import type { Pet as PetRecord, Prisma } from '@prisma/client'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 
 export const ACTIVE_PETS_WHERE: Prisma.PetWhereInput = {
   OR: [{ deleted_at: null }, { deleted_at: { isSet: false } }],
@@ -659,7 +659,7 @@ Expected: empty. No commit for this task.
 ```ts
 import { NextResponse, type NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 import { readJsonBody } from '@/server/body'
 
 export async function POST(request: NextRequest) {
@@ -703,7 +703,7 @@ Fidelity notes: `genSalt(12)` + `hash` mirrors `UserController.criar`; the `as s
 
 ```ts
 import { NextResponse, type NextRequest } from 'next/server'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 import { readJsonBody } from '@/server/body'
 
 interface RouteParams {
@@ -758,7 +758,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 ```ts
 import { NextResponse, type NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 import { readJsonBody } from '@/server/body'
 import { setAuthCookie } from '@/server/auth'
 import { signToken } from '@/server/jwt'
@@ -856,7 +856,7 @@ curl -s -X POST $B/usuarios -H "$J" -d '{"email":"segundo@apata.local","name":"S
 curl -s -o /dev/null -w '%{http_code}\n' -X POST $B/usuarios -H "$J" -d '{"email":"segundo@apata.local","name":"Dup","password":"abc123"}'
 
 # 9 list users, unauthenticated -> 200 array with "password":"$2b$..." (ported flaw, expected)
-curl -s $B/usuarios | grep -o '"password":"\$2[ab]\$12\$[^"]\{0,10\}' 
+curl -s $B/usuarios | grep -o '"password":"\$2[ab]\$12\$[^"]\{0,10\}'
 UID2=$(curl -s $B/usuarios | grep -o '"id":"[0-9a-f]\{24\}","email":"segundo@apata.local"' | cut -d'"' -f4); echo "UID2=$UID2"
 
 # 10 get by id -> 200; unknown but valid ObjectId -> 404; malformed id -> 500
@@ -907,7 +907,7 @@ cd "$REPO" && git add src/app/api/usuarios && git commit -m "feat: usuarios rout
 
 ```ts
 import { NextResponse, type NextRequest } from 'next/server'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 import { authenticate } from '@/server/auth'
 import { readPetBody } from '@/server/body'
 import { uploadPetPhoto } from '@/server/cloudinary'
@@ -975,7 +975,7 @@ export async function POST(request: NextRequest) {
 ```ts
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Prisma } from '@prisma/client'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
@@ -999,7 +999,7 @@ export async function GET(request: NextRequest) {
 ```ts
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Prisma } from '@prisma/client'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 import { authenticate } from '@/server/auth'
 import { readPetBody } from '@/server/body'
 import { destroyPhoto, uploadPetPhoto } from '@/server/cloudinary'

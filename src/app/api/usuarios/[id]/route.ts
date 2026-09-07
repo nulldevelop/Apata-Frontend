@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { prisma } from '@/server/prisma'
+import { prisma } from '@/lib/prisma'
 import { readJsonBody } from '@/server/body'
 
 interface RouteParams {

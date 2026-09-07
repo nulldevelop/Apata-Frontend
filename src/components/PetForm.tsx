@@ -1,26 +1,32 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent, type FocusEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FocusEvent } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { PatternFormat } from 'react-number-format'
+import type { z } from 'zod'
 import Button from './Button'
 import Spinner from './Spinner'
 import { createPet } from '@/lib/api'
-import type { PetFormValues } from '@/types'
+import { compressImage } from '@/lib/compressImage'
+import { petFormSchema } from '@/lib/validation/pet'
+
+type PetFormValues = z.input<typeof petFormSchema>
 
 const DEFAULT_PHONE = '93991185009'
 
 type SubmitStatus = 'inicio' | 'load'
 type SubmitMessage = '' | 'ok' | 'erro'
 
-const INITIAL_VALUES: PetFormValues = {
+const INITIAL_VALUES = {
   nome: '',
   especie: '',
   porte: '',
   sexo: '',
   descricao: '',
   contato: DEFAULT_PHONE,
-}
+  foto: null,
+} as unknown as PetFormValues
 
 function scrollIntoCenter(e: FocusEvent<HTMLElement>) {
   const target = e.target
@@ -30,11 +36,10 @@ function scrollIntoCenter(e: FocusEvent<HTMLElement>) {
 }
 
 export default function PetForm() {
-  const photoFile = useRef<File | null>(null)
   const photoInput = useRef<HTMLInputElement>(null)
 
-  const [photoError, setPhotoError] = useState<'' | 'erro'>('')
   const [fileName, setFileName] = useState('')
+  const [photoPreview, setPhotoPreview] = useState('')
   const [message, setMessage] = useState<SubmitMessage>('')
   const [status, setStatus] = useState<SubmitStatus>('inicio')
 
@@ -44,20 +49,22 @@ export default function PetForm() {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<PetFormValues>({ mode: 'all', defaultValues: INITIAL_VALUES })
+    setValue,
+    setError,
+  } = useForm<PetFormValues>({
+    mode: 'all',
+    defaultValues: INITIAL_VALUES,
+    resolver: zodResolver(petFormSchema),
+  })
 
-  function isPhotoValid(): boolean {
-    if (!photoFile.current) {
-      setPhotoError('erro')
-      return false
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview)
     }
-    setPhotoError('')
-    return true
-  }
+  }, [photoPreview])
 
   async function submit(values: PetFormValues) {
     if (status !== 'inicio') return
-    if (!isPhotoValid()) return
 
     setStatus('load')
 
@@ -67,16 +74,15 @@ export default function PetForm() {
     formData.append('porte', values.porte)
     formData.append('sexo', values.sexo)
     formData.append('descricao', values.descricao)
-    if (photoFile.current) formData.append('file', photoFile.current)
+    if (values.foto) formData.append('file', values.foto)
     formData.append('contato', values.contato)
 
     try {
       await createPet(formData)
       reset(INITIAL_VALUES)
       if (photoInput.current) photoInput.current.value = ''
-      photoFile.current = null
       setFileName('')
-      setPhotoError('')
+      setPhotoPreview('')
       setStatus('inicio')
       setMessage('ok')
     } catch (error) {
@@ -86,71 +92,94 @@ export default function PetForm() {
     }
   }
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    photoFile.current = file
-    setFileName(file.name)
-    setPhotoError('')
+    if (photoPreview) URL.revokeObjectURL(photoPreview)
+
+    try {
+      const compressedFile = await compressImage(file)
+      setValue('foto', compressedFile, { shouldValidate: true, shouldDirty: true })
+      setFileName(file.name)
+      setPhotoPreview(URL.createObjectURL(compressedFile))
+    } catch (error) {
+      setValue('foto', null, { shouldValidate: true })
+      setFileName('')
+      setPhotoPreview('')
+      setError('foto', { type: 'validate', message: error instanceof Error ? error.message : 'Não foi possível processar a imagem' })
+    }
   }
 
   return (
-    <div className="pt-10 relative min-h-screen">
+    <div className="relative min-h-screen px-4 py-8 sm:px-6">
       <form
         onSubmit={(e) => void handleSubmit(submit)(e)}
-        className="flex flex-col max-w-72 px-5 my-10 mx-auto justify-start rounded-2xl bg-(--bg-color2)"
+        className="mx-auto flex w-full max-w-2xl flex-col rounded-2xl bg-(--bg-color2) px-5 py-6 shadow-sm sm:px-8"
       >
+        <div className="mb-2 text-left">
+          <p className="text-sm font-bold uppercase tracking-wide text-(--tertiary-color)">Novo cadastro</p>
+          <h1 className="text-3xl font-bold text-(--text-color2)">Cadastre um animal</h1>
+          <p className="mt-1 text-base text-(--text-color2)">Preencha os dados para ajudar esse animal a encontrar um lar.</p>
+        </div>
         <fieldset disabled={status !== 'inicio'} className="flex flex-col">
-          <label className="formlabel"> Nome do animal:</label>
-          <input className="input" {...register('nome', { required: true })} type="text" placeholder="Nome do animal." onFocus={scrollIntoCenter} />
-          {errors.nome && <p className="formerro">Campo obrigatório</p>}
+          <label className="formlabel" htmlFor="nome">Nome do animal</label>
+          <input id="nome" className="input" {...register('nome', { required: 'Campo obrigatório' })} type="text" placeholder="Ex.: Mel" onFocus={scrollIntoCenter} aria-invalid={Boolean(errors.nome)} />
+          {errors.nome && <p className="formerro">{errors.nome.message}</p>}
 
-          <label className="formlabel"> Carregue uma imagem:</label>
+          <label className="formlabel" htmlFor="foto">Foto do animal</label>
 
-          <Button name="Escolha sua imagem" onClick={() => photoInput.current?.click()} size={15} />
+          <Button name={photoPreview ? 'Trocar imagem' : 'Escolher imagem'} onClick={() => photoInput.current?.click()} size={15} />
 
-          <input type="file" ref={photoInput} onChange={handleFileChange} onFocus={scrollIntoCenter} className="hidden" accept="image/*" />
+          <input id="foto" type="file" ref={photoInput} onChange={(event) => void handleFileChange(event)} onFocus={scrollIntoCenter} className="hidden" accept="image/*" />
 
-          <p className="pl-2.5 text-[16px] text-(--text-color)">{fileName}</p>
+          {photoPreview ? (
+            <div className="mt-2 flex items-center gap-3 rounded-xl border-2 border-(--primary-color) bg-white p-2 text-left">
+              <img src={photoPreview} alt="Prévia da foto selecionada" className="h-20 w-20 rounded-lg object-cover" />
+              <p className="break-all text-base text-(--text-color)">{fileName}</p>
+            </div>
+          ) : (
+            <p className="text-base text-(--text-color2)">JPG, PNG ou outro formato de imagem.</p>
+          )}
 
-          {photoError === 'erro' && <p className="formerro">Campo obrigatório</p>}
+          {errors.foto && <p className="formerro">{errors.foto.message}</p>}
 
-          <label className="formlabel">Espécie</label>
-          <select className="input" {...register('especie', { required: true })}>
+          <label className="formlabel" htmlFor="especie">Espécie</label>
+          <select id="especie" className="input" {...register('especie', { required: 'Campo obrigatório' })}>
             <option value="">Selecione</option>
             <option value="cachorro">Cachorro</option>
             <option value="gato">Gato</option>
           </select>
-          {errors.especie && <p className="formerro">Campo obrigatório</p>}
+          {errors.especie && <p className="formerro">{errors.especie.message}</p>}
 
-          <label className="formlabel">Porte</label>
-          <select className="input" {...register('porte', { required: true })}>
+          <label className="formlabel" htmlFor="porte">Porte</label>
+          <select id="porte" className="input" {...register('porte', { required: 'Campo obrigatório' })}>
             <option value="">Selecione</option>
             <option value="pequeno">Pequeno</option>
             <option value="medio">Médio</option>
             <option value="grande">Grande</option>
           </select>
-          {errors.porte && <p className="formerro">Campo obrigatório</p>}
+          {errors.porte && <p className="formerro">{errors.porte.message}</p>}
 
-          <label className="formlabel">Sexo</label>
-          <select className="input" {...register('sexo', { required: true })}>
+          <label className="formlabel" htmlFor="sexo">Sexo</label>
+          <select id="sexo" className="input" {...register('sexo', { required: 'Campo obrigatório' })}>
             <option value="">Selecione</option>
             <option value="macho">Macho</option>
             <option value="femea">Fêmea</option>
           </select>
-          {errors.sexo && <p className="formerro">Campo obrigatório</p>}
+          {errors.sexo && <p className="formerro">{errors.sexo.message}</p>}
 
-          <label className="formlabel"> Sobre:</label>
+          <label className="formlabel" htmlFor="descricao">Sobre o animal</label>
           <textarea
+            id="descricao"
             className="textarea max-h-16"
-            {...register('descricao', { required: true })}
+            {...register('descricao', { required: 'Campo obrigatório' })}
             rows={2}
             placeholder="Idade, castrado, deficiência e etc."
             onFocus={scrollIntoCenter}
           />
-          {errors.descricao && <p className="formerro">Campo obrigatório</p>}
+          {errors.descricao && <p className="formerro">{errors.descricao.message}</p>}
 
-          <label className="formlabel"> Contato:</label>
+          <label className="formlabel" htmlFor="contato">Contato</label>
           <Controller
             name="contato"
             control={control}
@@ -162,6 +191,7 @@ export default function PetForm() {
               <PatternFormat
                 {...field}
                 getInputRef={ref}
+                id="contato"
                 className="input"
                 prefix="+55 "
                 format="(##) # ####-####"
