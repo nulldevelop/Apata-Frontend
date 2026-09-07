@@ -1,10 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/server/prisma'
 import { authenticate } from '@/server/auth'
 import { readPetBody } from '@/server/body'
 import { uploadPetPhoto } from '@/server/cloudinary'
 import { findActivePets } from '@/server/pets'
-import { PetValidationError, toPetPersistence, validatePetPayload } from '@/server/pet-validation'
 
 export async function GET() {
   try {
@@ -21,10 +20,8 @@ export async function POST(request: NextRequest) {
   if ('error' in auth) return auth.error
 
   try {
-    const { fields: rawFields, file: rawFile } = await readPetBody(request)
-    const { fields, file } = validatePetPayload(rawFields, rawFile)
-    const { nome, especie, porte, sexo, descricao, contato } = fields
-    const petFields = toPetPersistence(fields)
+    const { fields, file } = await readPetBody(request)
+    const { nome, especie, porte, sexo, descricao, tutelado, contato } = fields
 
     let fotoUrl: string | null = null
     let publicId: string | null = null
@@ -43,8 +40,7 @@ export async function POST(request: NextRequest) {
         sexo: sexo as string,
         descricao: descricao as string,
         contato: contato as string | undefined,
-        ...petFields,
-        tutelado: false,
+        tutelado: tutelado === 'true' || tutelado === true,
         aprovado: true,
         adotado: false,
         foto: fotoUrl,
@@ -56,9 +52,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(novoPet, { status: 201 })
   } catch (error) {
-    if (error instanceof PetValidationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status })
-    }
     return NextResponse.json(
       { error: 'Erro ao cadastrar pet', details: error instanceof Error ? error.message : undefined },
       { status: 500 },

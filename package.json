@@ -1,17 +1,17 @@
 {
-  "name": "apata-frontend",
+  "name": "achados-e-perdidos",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.9.1",
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "6.19.3",
     "@tanstack/react-query": "^5.90.12",
     "axios": "^1.13.2",
     "bcryptjs": "3.0.3",
@@ -22,8 +22,7 @@
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.68.0",
     "react-icons": "^5.5.0",
-    "react-number-format": "^5.4.4",
-    "zod": "^4.5.4"
+    "react-number-format": "^5.4.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -32,16 +31,10 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",
-    "dotenv": "^17.0.1",
     "eslint": "^9.39.1",
     "eslint-config-next": "16.3.4",
-    "prisma": "^6.19.3",
+    "prisma": "6.19.3",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
-  },
-  "allowScripts": {
-    "@prisma/client@6.19.3": true,
-    "@prisma/engines@6.19.3": true,
-    "prisma@6.19.3": true
   }
 }

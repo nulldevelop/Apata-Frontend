@@ -29,8 +29,6 @@ dist-ssr
 out/
 next-env.d.ts
 *.tsbuildinfo
-docs/
-prisma/generated/prisma
 
 # env
 .env*.local

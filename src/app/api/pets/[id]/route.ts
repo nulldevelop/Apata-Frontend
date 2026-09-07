@@ -1,10 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/server/prisma'
 import { authenticate } from '@/server/auth'
 import { readPetBody } from '@/server/body'
 import { destroyPhoto, uploadPetPhoto } from '@/server/cloudinary'
-import { PetValidationError, toPetPersistence, validatePetPayload } from '@/server/pet-validation'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -30,9 +29,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const dadosAtuais = await prisma.pet.findFirst({ where: { id, deleted_at: null } })
     if (!dadosAtuais) return NextResponse.json({ error: 'Pet não encontrado' }, { status: 404 })
 
-    const { fields: rawFields, file: rawFile } = await readPetBody(request)
-    const { fields, file } = validatePetPayload(rawFields, rawFile, true)
-    const dataUpdate: Record<string, unknown> = toPetPersistence(fields)
+    const { fields, file } = await readPetBody(request)
+    const dataUpdate: Record<string, unknown> = { ...fields }
 
     let fotoSubstituida: string | null = null
 
@@ -51,10 +49,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (fotoSubstituida) await destroyPhoto(fotoSubstituida).catch(() => undefined)
 
     return NextResponse.json(petAtualizado, { status: 200 })
-  } catch (error) {
-    if (error instanceof PetValidationError) {
-      return NextResponse.json({ error: error.message }, { status: error.status })
-    }
+  } catch {
     return NextResponse.json({ error: 'Erro ao atualizar pet' }, { status: 500 })
   }
 }
