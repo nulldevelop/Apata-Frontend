@@ -5,8 +5,19 @@ export class PetValidationError extends Error {
   status = 400
 }
 
+function normalizePetFields(fields: Fields): Fields {
+  const normalized = { ...fields }
+  for (const key of ['vacinado', 'vermifugado', 'castrado', 'microchip']) {
+    if (typeof normalized[key] === 'string') normalized[key] = normalized[key] === 'true'
+  }
+  for (const key of ['dataVermifugacao', 'numeroMicrochip']) {
+    if (normalized[key] === '') delete normalized[key]
+  }
+  return normalized
+}
+
 export function validatePetPayload(fields: Fields, file: File | null, partial = false) {
-  const fieldsResult = (partial ? petUpdateSchema : petFieldsSchema).safeParse(fields)
+  const fieldsResult = (partial ? petUpdateSchema : petFieldsSchema).safeParse(normalizePetFields(fields))
   if (!fieldsResult.success) {
     throw new PetValidationError(fieldsResult.error.issues[0]?.message ?? 'Dados inválidos')
   }
@@ -19,6 +30,14 @@ export function validatePetPayload(fields: Fields, file: File | null, partial = 
   }
 
   return { fields: fieldsResult.data, file }
+}
+
+export function toPetPersistence(fields: Record<string, unknown>) {
+  const data = { ...fields }
+  if ('dataVermifugacao' in data) {
+    data.dataVermifugacao = data.dataVermifugacao ? new Date(`${data.dataVermifugacao}T00:00:00.000Z`) : null
+  }
+  return data
 }
 
 export { MAX_IMAGE_SIZE }

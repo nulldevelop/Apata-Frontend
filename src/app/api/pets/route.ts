@@ -4,7 +4,7 @@ import { authenticate } from '@/server/auth'
 import { readPetBody } from '@/server/body'
 import { uploadPetPhoto } from '@/server/cloudinary'
 import { findActivePets } from '@/server/pets'
-import { PetValidationError, validatePetPayload } from '@/server/pet-validation'
+import { PetValidationError, toPetPersistence, validatePetPayload } from '@/server/pet-validation'
 
 export async function GET() {
   try {
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     const { fields: rawFields, file: rawFile } = await readPetBody(request)
     const { fields, file } = validatePetPayload(rawFields, rawFile)
     const { nome, especie, porte, sexo, descricao, contato } = fields
+    const petFields = toPetPersistence(fields)
 
     let fotoUrl: string | null = null
     let publicId: string | null = null
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
         sexo: sexo as string,
         descricao: descricao as string,
         contato: contato as string | undefined,
+        ...petFields,
         tutelado: false,
         aprovado: true,
         adotado: false,

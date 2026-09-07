@@ -13,6 +13,11 @@ export async function listPets(): Promise<Pet[]> {
   return data
 }
 
+export async function getPet(id: Pet['id']): Promise<Pet> {
+  const { data } = await axios.get<Pet>(`${API_URL}/pets/${id}`)
+  return data
+}
+
 export async function createPet(formData: FormData): Promise<Pet> {
   const { data } = await axios.post<Pet>(`${API_URL}/pets`, formData, authConfig())
   return data

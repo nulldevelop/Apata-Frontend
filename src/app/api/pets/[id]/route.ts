@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { authenticate } from '@/server/auth'
 import { readPetBody } from '@/server/body'
 import { destroyPhoto, uploadPetPhoto } from '@/server/cloudinary'
-import { PetValidationError, validatePetPayload } from '@/server/pet-validation'
+import { PetValidationError, toPetPersistence, validatePetPayload } from '@/server/pet-validation'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const { fields: rawFields, file: rawFile } = await readPetBody(request)
     const { fields, file } = validatePetPayload(rawFields, rawFile, true)
-    const dataUpdate: Record<string, unknown> = { ...fields }
+    const dataUpdate: Record<string, unknown> = toPetPersistence(fields)
 
     let fotoSubstituida: string | null = null
 

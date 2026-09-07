@@ -11,6 +11,12 @@ export interface Pet {
   porte: Size
   descricao: string
   contato: string | null
+  vacinado: boolean
+  vermifugado: boolean
+  dataVermifugacao: string | null
+  castrado: boolean
+  microchip: boolean
+  numeroMicrochip: string | null
 }
 
 export interface PetFormValues {
@@ -20,6 +26,12 @@ export interface PetFormValues {
   porte: Size | ''
   sexo: Sex | ''
   contato: string
+  vacinado: boolean
+  vermifugado: boolean
+  dataVermifugacao: string
+  castrado: boolean
+  microchip: boolean
+  numeroMicrochip: string
 }
 
 export interface PetFilters {

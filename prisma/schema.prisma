@@ -17,15 +17,21 @@ model User {
 }
 
 model Pet {
-  id            String  @id @default(auto()) @map("_id") @db.ObjectId
-  foto          String?
-  public_idfoto String?
-  nome          String
-  especie       String
-  porte         String
-  sexo          String
-  descricao     String
-  contato       String?
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  foto             String?
+  public_idfoto    String?
+  nome             String
+  especie          String
+  porte            String
+  sexo             String
+  descricao        String
+  contato          String?
+  vacinado         Boolean   @default(false)
+  vermifugado      Boolean   @default(false)
+  dataVermifugacao DateTime?
+  castrado         Boolean   @default(false)
+  microchip        Boolean   @default(false)
+  numeroMicrochip  String?
 
   adotado  Boolean @default(false)
   aprovado Boolean @default(true)
