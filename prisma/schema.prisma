@@ -27,6 +27,11 @@ model Pet {
   descricao     String
   contato       String?
 
+  vacinado      Boolean? @default(false)
+  vermifugado   Boolean? @default(false)
+  castrado      Boolean? @default(false)
+  microchip     Boolean? @default(false)
+
   adotado  Boolean @default(false)
   aprovado Boolean @default(true)
   tutelado Boolean @default(true)
