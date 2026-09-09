@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent, type FocusEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PatternFormat } from 'react-number-format'
+import { MdEdit, MdDelete } from 'react-icons/md'
 import Button from './Button'
 import Spinner from './Spinner'
 import { createPet } from '@/lib/api'
@@ -139,6 +140,16 @@ export default function PetForm() {
     }
   }
 
+  function handleRemovePhoto() {
+    photoFile.current = null
+    setPhotoPreview(null)
+    setPhotoInfo(null)
+    setPhotoError('')
+    if (photoInput.current) {
+      photoInput.current.value = ''
+    }
+  }
+
   async function submit(values: PetFormSchema) {
     if (status !== 'inicio' || isCompressing) return
     if (!isPhotoValid()) return
@@ -212,13 +223,6 @@ export default function PetForm() {
 
           <label className="formlabel">Carregue uma imagem:</label>
 
-          <Button
-            name={isCompressing ? 'Comprimindo...' : 'Escolha sua imagem'}
-            onClick={() => photoInput.current?.click()}
-            size={15}
-            disabled={isCompressing}
-          />
-
           <input
             type="file"
             ref={photoInput}
@@ -228,32 +232,60 @@ export default function PetForm() {
             accept="image/jpeg,image/png,image/jpg"
           />
 
-          {isCompressing && (
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <Spinner className="w-5 h-5" />
-              <p className="text-sm text-(--text-color) font-bold animate-pulse">Comprimindo imagem para &le; 5MB...</p>
-            </div>
-          )}
+          <div className="flex flex-col items-center gap-2 my-1">
+            <div className="flex items-center justify-center gap-2 w-full my-1">
+              <button
+                type="button"
+                onClick={() => photoInput.current?.click()}
+                disabled={isCompressing}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition-all cursor-pointer border border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+              >
+                <MdEdit className="text-base" />
+                {photoPreview ? 'Editar foto' : 'Escolher foto'}
+              </button>
 
-          {photoPreview && (
-            <div className="mt-2 flex flex-col items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photoPreview}
-                alt="Preview do animal"
-                className="w-24 h-24 object-cover rounded-full border-4 border-(--primary-color)"
-              />
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                disabled={!photoPreview || isCompressing}
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all border shadow-xs ${
+                  photoPreview && !isCompressing
+                    ? 'bg-red-100 text-red-800 hover:bg-red-200 border-red-300 cursor-pointer'
+                    : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
+                }`}
+              >
+                <MdDelete className="text-base" />
+                Remover foto
+              </button>
             </div>
-          )}
 
-          {photoInfo && (
-            <div className="pl-1 pt-1 text-center">
-              <p className="text-[14px] font-bold text-(--text-color) break-words">{photoInfo.name}</p>
-              <p className="text-[12px] text-(--text-color2)">{photoInfo.sizeText}</p>
-            </div>
-          )}
+            {isCompressing && (
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <Spinner className="w-5 h-5" />
+                <p className="text-sm text-(--text-color) font-bold animate-pulse">Comprimindo imagem para &le; 5MB...</p>
+              </div>
+            )}
 
-          {photoError && <p className="formerro">{photoError}</p>}
+            {photoPreview && (
+              <div className="mt-2 flex flex-col items-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoPreview}
+                  alt="Preview do animal"
+                  className="w-24 h-24 object-cover rounded-full border-4 border-(--primary-color) shadow-sm"
+                />
+              </div>
+            )}
+
+            {photoInfo && (
+              <div className="pl-1 pt-1 text-center">
+                <p className="text-[14px] font-bold text-(--text-color) break-words">{photoInfo.name}</p>
+                <p className="text-[12px] text-(--text-color2)">{photoInfo.sizeText}</p>
+              </div>
+            )}
+
+            {photoError && <p className="formerro">{photoError}</p>}
+          </div>
 
           <label className="formlabel">Espécie</label>
           <select className="input" {...register('especie')}>

@@ -23,7 +23,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const auth = authenticate(request)
+  const auth = await authenticate(request)
   if ('error' in auth) return auth.error
 
   try {
@@ -71,7 +71,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const auth = authenticate(request)
+  const auth = await authenticate(request)
   if ('error' in auth) return auth.error
 
   try {

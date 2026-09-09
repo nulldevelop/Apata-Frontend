@@ -18,7 +18,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = authenticate(request)
+  const auth = await authenticate(request)
   if ('error' in auth) return auth.error
 
   try {
